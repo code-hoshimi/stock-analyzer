@@ -1,0 +1,35 @@
+version: '3.8'
+
+volumes:
+  db_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /home/hoshimi/data/stock_data
+
+services:
+  querier:
+    build: ./querier
+    volumes:
+      - db_data:/data
+    environment:
+      - DB_PATH=/data/stocks.db
+      - TWELVEDATA_API_KEY=${TWELVEDATA_API_KEY}
+    restart: "no"
+
+  analyzer_python:
+    build: ./analyzer/py
+    volumes:
+      - db_data:/data
+    environment:
+      - DB_PATH=/data/stocks.db
+    restart: unless-stopped
+
+  analyzer_cpp:
+    build: ./analyzer/cpp
+    volumes:
+      - db_data:/data
+    environment:
+      - DB_PATH=/data/stocks.db
+    restart: unless-stopped

@@ -1,0 +1,22 @@
+# sqlite data files
+data/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+
+# C++
+build/
+*.o
+*.out
+
+# Go
+bin/
+
+# env vars
+.env
+
+#IDEs
+.idea

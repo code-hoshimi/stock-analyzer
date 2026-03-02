@@ -1,0 +1,23 @@
+# Debian/Ubuntu
+sudo apt-get install -y sqlite3
+
+sqlite3 /home/hoshimi/data/stock_data/stocks.db
+
+-- list tables
+.tables
+
+-- describe the table
+.schema stock_prices
+
+-- pretty column output
+.mode column
+.headers on
+
+-- query recent records
+SELECT * FROM stock_prices ORDER BY datetime DESC LIMIT 20;
+
+-- filter by symbol
+SELECT * FROM stock_prices WHERE symbol = 'AAPL' ORDER BY datetime DESC LIMIT 10;
+
+-- exit
+.quit
