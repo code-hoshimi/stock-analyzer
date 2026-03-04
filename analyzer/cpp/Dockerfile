@@ -5,8 +5,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
-COPY main.cpp .
-RUN g++ -std=c++17 -O2 -o analyzer main.cpp -lsqlite3
+COPY main.cpp sql_client.h ./
+RUN g++ -std=c++23 -O2 -o analyzer main.cpp -lsqlite3
 
 
 FROM debian:bookworm-slim

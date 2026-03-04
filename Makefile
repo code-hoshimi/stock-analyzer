@@ -28,8 +28,7 @@ run-yfinance-querier:
 
 ## Compile the C++ analyzer binary locally at bin/analyzer_cpp
 build-analyzer-cpp:
-	mkdir -p bin
-	g++ -std=c++17 -O2 -o bin/analyzer_cpp analyzer/cpp/main.cpp -lsqlite3
+	$(MAKE) -C analyzer/cpp build
 
 ## Build the C++ analyzer Docker image and run it
 run-analyzer-cpp:

@@ -8,15 +8,27 @@
 #include <algorithm>
 #include <sqlite3.h>
 
-void draw(const std::vector<double>& prices, const std::vector<std::string>& labels) {
-    const int H = 10, W = prices.size();
-    double lo = *std::min_element(prices.begin(), prices.end());
-    double hi = *std::max_element(prices.begin(), prices.end());
+#include "sql_client.h"
+
+struct single_price {
+    std::string symbol;
+    std::string label;
+    double price;
+};
+
+void draw(const std::vector<single_price>& output) {
+    const int H = 10, W = output.size();
+    double lo = std::min_element(output.begin(), output.end(), [](const single_price& a, const single_price& b) {
+        return a.price < b.price;
+    })->price;
+    double hi = std::max_element(output.begin(), output.end(), [](const single_price& a, const single_price& b) {
+        return a.price < b.price;
+    })->price;
     if (hi == lo) hi = lo + 1;
 
     // Map each price to its nearest row (single dot)
     auto dot_row = [&](int c) {
-        return (int)std::round((prices[c] - lo) / (hi - lo) * H);
+        return (int)std::round((output[c].price - lo) / (hi - lo) * H);
     };
 
     for (int row = H; row >= 0; --row) {
@@ -32,44 +44,30 @@ void draw(const std::vector<double>& prices, const std::vector<std::string>& lab
     int step = std::max(1, W / 8);
     std::cout << "          ";
     for (int c = 0; c < W; c += step) {
-        std::string t = (labels[c].size() >= 16) ? labels[c].substr(11, 5) : labels[c];
+        std::string label = output[c].label;
+        std::string t = (label.size() >= 16) ? label.substr(11, 5) : label;
         std::cout << std::left << std::setw(step * 3) << t;
     }
     std::cout << "\n";
 }
 
 void analyze(const std::string& db_path) {
-    sqlite3* db = nullptr;
-    if (sqlite3_open(db_path.c_str(), &db) != SQLITE_OK) {
-        std::cerr << "Cannot open database: " << sqlite3_errmsg(db) << "\n";
-        return;
-    }
+    std::vector<single_price> output;
+    hoshimi::sql_client::query(db_path,
+        "SELECT symbol, datetime, close FROM stock_prices ORDER BY datetime ASC LIMIT 60;",
+        output,
+        [](sqlite3_stmt* stmt) -> single_price {
+            return single_price {
+                .symbol = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0)),
+                .label = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1)),
+                .price = std::stod(reinterpret_cast<const char*>(sqlite3_column_text(stmt, 2))),
+            };
+        }
+    );
+    if (output.empty()) { std::cout << "No data yet.\n"; return; }
 
-    const char* sql =
-        "SELECT symbol, datetime, close FROM stock_prices ORDER BY datetime ASC LIMIT 60;";
-
-    sqlite3_stmt* stmt = nullptr;
-    if (sqlite3_prepare_v2(db, sql, -1, &stmt, nullptr) != SQLITE_OK) {
-        std::cerr << "Failed to prepare statement: " << sqlite3_errmsg(db) << "\n";
-        sqlite3_close(db);
-        return;
-    }
-
-    std::string symbol;
-    std::vector<double> prices;
-    std::vector<std::string> labels;
-    while (sqlite3_step(stmt) == SQLITE_ROW) {
-        symbol   = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0));
-        labels.push_back(reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1)));
-        prices.push_back(std::stod(reinterpret_cast<const char*>(sqlite3_column_text(stmt, 2))));
-    }
-    sqlite3_finalize(stmt);
-    sqlite3_close(db);
-
-    if (prices.empty()) { std::cout << "No data yet.\n"; return; }
-
-    std::cout << "\n  " << symbol << " close price\n\n";
-    draw(prices, labels);
+    std::cout << "\n  " << output[0].symbol << " close price\n\n";
+    draw(output);
 }
 
 int main() {
