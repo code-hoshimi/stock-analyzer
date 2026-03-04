@@ -21,9 +21,9 @@ run-yfinance-querier:
 	docker compose build querier_python
 	docker compose run --rm \
 		-e DB_PATH=$${DB_PATH:-/data/stocks.db} \
-		-e SYMBOL=$${SYMBOL:-AAPL} \
-		-e INTERVAL=$${INTERVAL:-1m} \
-		-e PERIOD=$${PERIOD:-1d} \
+		-e SYMBOLS=$${SYMBOLS:-} \
+		-e INTERVAL=$${INTERVAL:-1d} \
+		-e PERIOD=$${PERIOD:-6mo} \
 		querier_python
 
 ## Compile the C++ analyzer binary locally at bin/analyzer_cpp
