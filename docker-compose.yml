@@ -18,6 +18,17 @@ services:
       - TWELVEDATA_API_KEY=${TWELVEDATA_API_KEY}
     restart: "no"
 
+  querier_python:
+    build: ./yfinance_querier
+    volumes:
+      - db_data:/data
+    environment:
+      - DB_PATH=/data/stocks.db
+      - SYMBOL=AAPL
+      - INTERVAL=1m
+      - PERIOD=1d
+    restart: "no"
+
   analyzer_python:
     build: ./analyzer/py
     volumes:

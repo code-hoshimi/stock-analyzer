@@ -1,4 +1,4 @@
-.PHONY: docker-build build-querier run-querier build-analyzer-cpp run-analyzer-cpp
+.PHONY: docker-build build-querier run-querier run-yfinance-querier build-analyzer-cpp run-analyzer-cpp
 
 ## Build all images
 docker-build:
@@ -15,6 +15,16 @@ run-querier:
 		-e DB_PATH=$${DB_PATH:-/data/stocks.db} \
 		-e TWELVEDATA_API_KEY=$${TWELVEDATA_API_KEY} \
 		querier
+
+## Build the yfinance querier image and run it once
+run-yfinance-querier:
+	docker compose build querier_python
+	docker compose run --rm \
+		-e DB_PATH=$${DB_PATH:-/data/stocks.db} \
+		-e SYMBOL=$${SYMBOL:-AAPL} \
+		-e INTERVAL=$${INTERVAL:-1m} \
+		-e PERIOD=$${PERIOD:-1d} \
+		querier_python
 
 ## Compile the C++ analyzer binary locally at bin/analyzer_cpp
 build-analyzer-cpp:
