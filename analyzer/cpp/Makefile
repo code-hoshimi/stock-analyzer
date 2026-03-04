@@ -5,8 +5,8 @@ LDFLAGS  := -lsqlite3
 BIN_DIR  := ../../bin
 TARGET   := $(BIN_DIR)/analyzer_cpp
 
-SRCS     := main.cpp
-HDRS     := sql_client.h
+SRCS     := main.cpp indicators.cpp analyzers.cpp
+HDRS     := indicators.h analyzers.h $(wildcard sql/*.h models/*.h utils/*.h)
 
 .PHONY: all build clean run
 
