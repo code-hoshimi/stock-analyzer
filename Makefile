@@ -36,3 +36,11 @@ run-analyzer-cpp:
 	docker compose run --rm \
 		-e DB_PATH=$${DB_PATH:-/data/stocks.db} \
 		analyzer_cpp
+
+## Run the UI API Gateway
+run-ui-api-gateway:
+	docker compose run --rm \
+		-e DB_PATH=$${DB_PATH:-/data/stocks.db} \
+		-e PORT=$${PORT:-8080} \
+		-e DATA_SERVER_BASE=$${DATA_SERVER_BASE:-http://localhost:3881} \
+		ui_api_gateway
