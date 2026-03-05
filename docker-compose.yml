@@ -45,8 +45,8 @@ services:
       - DB_PATH=/data/stocks.db
     restart: unless-stopped
 
-  ui-api-gateway:
-    build: ./ui-api-gateway
+  ui_api_gateway:
+    build: ./ui_api_gateway
     ports:
       - "6330:8080"
     volumes:

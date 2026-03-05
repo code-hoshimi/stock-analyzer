@@ -1,5 +1,5 @@
 {
-  "name": "ui-api-gateway",
+  "name": "ui_api_gateway",
   "version": "0.1.0",
   "private": true,
   "type": "commonjs",
