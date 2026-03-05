@@ -54,4 +54,6 @@ services:
     environment:
       - DB_PATH=/data/stocks.db
       - PORT=8080
-      - DATA_SERVER_BASE=http://localhost:3881
+      - DATA_SERVER_BASE=http://host.docker.internal:3881
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
