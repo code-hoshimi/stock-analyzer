@@ -39,6 +39,7 @@ run-analyzer-cpp:
 
 ## Run the UI API Gateway
 run-ui-api-gateway:
+	docker compose build --no-cache ui_api_gateway
 	docker compose run --rm \
 		-e DB_PATH=$${DB_PATH:-/data/stocks.db} \
 		-e PORT=$${PORT:-8080} \
