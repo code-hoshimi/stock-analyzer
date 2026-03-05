@@ -1,0 +1,25 @@
+# ---- base ----
+FROM node:25-alpine
+
+# Create app directory
+WORKDIR /app
+
+# Install production deps first (better layer caching)
+COPY package*.json ./
+RUN npm ci --omit=dev
+
+# Copy source
+COPY . .
+
+# Default DB path matches your volume mount
+ENV DB_PATH=/data/stocks.db
+ENV PORT=8080
+ENV NODE_ENV=production
+
+EXPOSE 8080
+
+# Optional: add a non-root user (good practice)
+# Alpine node image already has "node" user
+USER node
+
+CMD ["node", "server.js"]

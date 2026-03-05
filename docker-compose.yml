@@ -44,3 +44,14 @@ services:
     environment:
       - DB_PATH=/data/stocks.db
     restart: unless-stopped
+
+  ui-api-gateway:
+    build: ./ui-api-gateway
+    ports:
+      - "6330:8080"
+    volumes:
+      - db_data:/data
+    environment:
+      - DB_PATH=/data/stocks.db
+      - PORT=8080
+      - DATA_SERVER_BASE=http://localhost:3881
