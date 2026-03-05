@@ -58,10 +58,16 @@ app.get("/healthz", (_req, res) => {
   res.json({ ok: true });
 });
 
+// ---- Hello World ----
+app.get("/api/hello", (req, res) => {
+  const name = typeof req.query.name === "string" && req.query.name.trim() ? req.query.name.trim() : "Miyabi-sama";
+  res.json({ message: `Say hello to ${name}!` });
+});
+
 // ---- Vanilla APIs ----
 //
-// GET /api/vanillia/recent?num=...
-app.get("/api/vanillia/recent", async (req, res) => {
+// GET /api/vanilla/recent?num=...
+app.get("/api/vanilla/recent", async (req, res) => {
   const num = parseNum(req.query.num);
   if (num === null) {
     return res.status(400).json({ error: "Invalid query: num must be a positive integer" });
@@ -79,13 +85,13 @@ app.get("/api/vanillia/recent", async (req, res) => {
     );
     res.json(rows);
   } catch (e) {
-    console.error("[API] /api/vanillia/recent error:", e);
+    console.error("[API] /api/vanilla/recent error:", e);
     res.status(500).json({ error: "DB query failed" });
   }
 });
 
-// GET /api/vanillia/symbol?num=...&symbol=...
-app.get("/api/vanillia/symbol", async (req, res) => {
+// GET /api/vanilla/symbol?num=...&symbol=...
+app.get("/api/vanilla/symbol", async (req, res) => {
   const num = parseNum(req.query.num);
   if (num === null) {
     return res.status(400).json({ error: "Invalid query: num must be a positive integer" });
@@ -109,7 +115,7 @@ app.get("/api/vanillia/symbol", async (req, res) => {
     );
     res.json(rows);
   } catch (e) {
-    console.error("[API] /api/vanillia/symbol error:", e);
+    console.error("[API] /api/vanilla/symbol error:", e);
     res.status(500).json({ error: "DB query failed" });
   }
 });
