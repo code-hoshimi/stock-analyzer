@@ -96,3 +96,75 @@ static void print_results(const std::vector<AnalysisResult>& results,
         std::cout << "No signal: " << symbol << "  (" << reason << ")\n";
     }
 }
+
+// ── JSON helpers ──────────────────────────────────────────────────────────
+
+// Simple JSON string escape
+static std::string json_escape(const std::string& s) {
+    std::string out;
+    for (char c : s) {
+        if      (c == '"')  out += "\\\"";
+        else if (c == '\\') out += "\\\\";
+        else if (c == '\n') out += "\\n";
+        else                out += c;
+    }
+    return out;
+}
+
+// ── Output ────────────────────────────────────────────────────────────────
+
+static void print_results_json(const std::vector<AnalysisResult>& results,
+    const std::vector<CrossSignal>& crosses,
+    const std::string& symbol,
+    bool verbose = false) {
+    std::ostringstream o;
+    o << std::fixed << std::setprecision(2);
+
+    o << "{\n";
+    o << "  \"symbol\": \"" << json_escape(symbol) << "\",\n";
+
+    // ── buy signals ──
+    o << "  \"signals\": [";
+    bool first_signal = true;
+    for (const auto& r : results) {
+        if (!r.is_buy_signal) continue;
+        if (!first_signal) o << ",";
+        first_signal = false;
+        o << "\n    {\n";
+        o << "      \"datetime\": \""  << json_escape(r.datetime)    << "\",\n";
+        o << "      \"is_buy_signal\": true,\n";
+        o << "      \"ma20\": "        << r.cross.ma_short            << ",\n";
+        o << "      \"ma60\": "        << r.cross.ma_long             << ",\n";
+        o << "      \"rsi\": "         << std::setprecision(1)
+                                       << r.rsi.rsi                   << ",\n";
+        o << "      \"obv_rising\": "  << (r.obv.is_rising ? "true" : "false") << ",\n";
+        o << "      \"note\": \""      << json_escape(r.note)         << "\"\n";
+        o << "    }";
+    }
+    o << "\n  ]";
+
+    // ── verbose: all crosses ──
+    if (verbose) {
+        o << ",\n  \"debug\": {\n";
+        o << "    \"total_crosses\": " << crosses.size() << ",\n";
+        o << "    \"all_crosses\": [";
+        bool first_cross = true;
+        for (const auto& c : crosses) {
+            if (!first_cross) o << ",";
+            first_cross = false;
+            o << "\n      {\n";
+            o << "        \"datetime\": \""  << json_escape(c.datetime) << "\",\n";
+            o << "        \"type\": \""
+              << (c.cross_type == CrossType::GOLDEN_CROSS ? "golden" : "death")
+              << "\",\n";
+            o << "        \"ma20\": "        << std::setprecision(2) << c.ma_short << ",\n";
+            o << "        \"ma60\": "        << c.ma_long   << ",\n";
+            o << "        \"close\": "       << c.close     << "\n";
+            o << "      }";
+        }
+        o << "\n    ]\n  }";
+    }
+
+    o << "\n}\n";
+    std::cout << o.str();
+}

@@ -17,7 +17,10 @@ int main() {
     const char* symbol_env = std::getenv("SYMBOL");
     std::string symbol = symbol_env ? symbol_env : "0700.HK";
 
-    std::cout << "C++ analyzer starting — db=" << db_path << "\n";
+    const char* json_env = std::getenv("OUTPUT_JSON");
+    bool output_json = json_env != nullptr && std::string(json_env) != "0";
+
+    std::cerr << "C++ analyzer starting — db=" << db_path << "\n";
     std::vector<Price> prices;
     hoshimi::sql_client::query(db_path,
         "SELECT symbol, interval, datetime, open, high, low, close, adj_close, volume FROM stock_prices WHERE symbol = '" + symbol + "' ORDER BY datetime ASC;",
@@ -46,8 +49,11 @@ int main() {
     auto obv     = calculate_obv(prices);
     auto results = analyze(crosses, rsi, obv, cutoff);
 
-    print_results(results, crosses, analyze_symbol, true);
-
+    if (output_json) {
+        print_results_json(results, crosses, analyze_symbol, true);
+    } else {
+        print_results(results, crosses, analyze_symbol, true);
+    }
     return 0;
 }
 

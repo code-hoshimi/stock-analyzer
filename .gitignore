@@ -20,3 +20,6 @@ bin/
 
 #IDEs
 .idea
+
+# Rust
+target/

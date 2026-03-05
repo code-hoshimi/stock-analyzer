@@ -1,9 +1,10 @@
 import os
+import sys
 import sqlite3
 import logging
 import yfinance as yf
 
-logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
+logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s", stream=sys.stdout)
 log = logging.getLogger(__name__)
 
 SYMBOLS = [
