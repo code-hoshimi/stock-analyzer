@@ -23,3 +23,14 @@ services:
       - ANALYZER_PATH=/app/analyzer_cpp
       - PORT=3881
     restart: unless-stopped
+
+  ui_api_gateway:
+    build: ./ui_api_gateway
+    ports:
+      - "6330:8080"
+    volumes:
+      - db_data:/data
+    environment:
+      - DB_PATH=/data/stocks.db
+      - PORT=8080
+      - DATA_SERVER_BASE=http://stock-analyzer-apiserver:3881

@@ -23,3 +23,6 @@ bin/
 
 # Rust
 target/
+
+# node modules
+node_modules/
