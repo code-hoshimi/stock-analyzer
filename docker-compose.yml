@@ -9,19 +9,19 @@ volumes:
       device: /home/hoshimi/data/stock_data
 
 services:
-  apiserver:
+  analyzer:
     build:
       context: .
-      dockerfile: apiserver/Dockerfile
+      dockerfile: analyzer/cpp/Dockerfile
+      additional_contexts:
+        grpc: /home/hoshimi/data/grpc
     ports:
       - "3881:3881"
     volumes:
       - db_data:/data
     environment:
       - DB_PATH=/data/stocks.db
-      - QUERIER_PATH=/app/querier/querier.py
-      - ANALYZER_PATH=/app/analyzer_cpp
-      - PORT=3881
+      - GRPC_PORT=3881
     restart: unless-stopped
 
   ui_api_gateway:

@@ -1,0 +1,40 @@
+syntax = "proto3";
+
+package indicator;
+
+enum CrossType {
+    GOLDEN_CROSS = 0;
+    DEATH_CROSS  = 1;
+}
+
+message CrossSignal {
+    string datetime = 1;
+    CrossType cross_type = 2;
+    double ma_short = 3;
+    double ma_long = 4;
+    double close = 5;
+    double rsi = 6;
+    int64 obv = 7;
+    bool is_obv_rising = 8;
+    bool is_buy_signal = 9;
+    string note = 10;
+}
+
+message AnalysisResult {
+    string symbol = 1;
+    repeated CrossSignal cross = 2;
+}
+
+message CrossRequest {
+    repeated string symbol = 1;
+    int64 ma_short = 2;
+    int64 ma_long = 3;
+}
+
+message CrossResponse {
+    repeated AnalysisResult analysis_result = 1;
+}
+
+service Analyzer {
+    rpc Cross (CrossRequest) returns (CrossResponse);
+}

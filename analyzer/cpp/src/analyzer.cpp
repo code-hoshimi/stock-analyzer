@@ -1,6 +1,6 @@
 #include <unordered_map>
 
-#include "analyzers.h"
+#include "analyzer.h"
 
 std::vector<AnalysisResult> analyze(
     const std::vector<CrossSignal>& crosses,

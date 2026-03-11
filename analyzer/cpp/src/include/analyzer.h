@@ -3,7 +3,7 @@
 #include <string>
 #include <vector>
 
-#include "models/models.h"
+#include "models.h"
 
 std::vector<AnalysisResult> analyze(
     const std::vector<CrossSignal>& crosses,

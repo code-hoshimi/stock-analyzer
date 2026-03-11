@@ -1,4 +1,4 @@
-#include "indicators.h"
+#include "indicator.h"
 
 // ─────────────────────────────────────────
 // 1. MA Cross

@@ -1,0 +1,4 @@
+.cache
+generated
+compile_commands.json
+compile_commands.events.json

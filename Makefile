@@ -1,17 +1,16 @@
-.PHONY: docker-build build-analyzer-cpp run-analyzer-api-server
+.PHONY: docker-build build-analyzer run-analyzer run-ui-api-gateway
 
 ## Build all images
 docker-build:
 	docker compose build
 
-## Compile the C++ analyzer binary locally at bin/analyzer_cpp
-build-analyzer-cpp:
+## Compile the C++ analyzer binary locally
+build-analyzer:
 	$(MAKE) -C analyzer/cpp build
 
-## Build the analyzer apiserver Docker image and run it
-run-analyzer-api-server:
-	docker compose build apiserver
-	docker compose run --rm -d -p 3881:3881 apiserver
+## Build the analyzer Docker image and run it
+run-analyzer:
+	docker compose up -d --build analyzer
 
 ## Run the UI API Gateway
 run-ui-api-gateway:

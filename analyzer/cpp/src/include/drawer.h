@@ -7,7 +7,7 @@
 #include <cmath>
 #include <iostream>
 
-#include "../models/models.h"
+#include "models.h"
 
 static void draw(const std::vector<SimplePrice>& output) {
     const int H = 10, W = output.size();
