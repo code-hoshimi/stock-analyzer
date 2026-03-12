@@ -25,10 +25,11 @@ void query(const std::string& db_path, const std::string& query_str, std::vector
     sqlite3* db = nullptr;
     sqlite3_stmt* stmt = nullptr;
 
-    if (sqlite3_open(db_path.c_str(), &db) != SQLITE_OK) {
+    if (sqlite3_open_v2(db_path.c_str(), &db, SQLITE_OPEN_READONLY, nullptr) != SQLITE_OK) {
         std::cerr << "Cannot open database: " << sqlite3_errmsg(db) << "\n";
         return;
     }
+    sqlite3_busy_timeout(db, 5000);
 
     if (sqlite3_prepare_v2(db, query_str.c_str(), -1, &stmt, nullptr) != SQLITE_OK) {
         std::cerr << "Failed to prepare statement: " << sqlite3_errmsg(db) << "\n";
@@ -48,10 +49,11 @@ void query(const std::string& db_path, const std::string& query_str, std::vector
     sqlite3* db = nullptr;
     sqlite3_stmt* stmt = nullptr;
 
-    if (sqlite3_open(db_path.c_str(), &db) != SQLITE_OK) {
+    if (sqlite3_open_v2(db_path.c_str(), &db, SQLITE_OPEN_READONLY, nullptr) != SQLITE_OK) {
         std::cerr << "Cannot open database: " << sqlite3_errmsg(db) << "\n";
         return;
     }
+    sqlite3_busy_timeout(db, 5000);
 
     if (sqlite3_prepare_v2(db, query_str.c_str(), -1, &stmt, nullptr) != SQLITE_OK) {
         std::cerr << "Failed to prepare statement: " << sqlite3_errmsg(db) << "\n";
