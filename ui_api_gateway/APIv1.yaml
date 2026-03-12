@@ -1,0 +1,650 @@
+openapi: 3.1.0
+info:
+  title: UI Backend Server API
+  version: 1.1.0
+  description: |
+    REST API for frontend to request multiple indicator analysis and
+    equity screening results. The backend may synchronize market data
+    and screen results from YFinance into the database before invoking
+    Analyzer service or returning stock preview data.
+
+servers:
+  - url: http://localhost:6330
+    description: Local UI backend development server
+
+tags:
+  - name: Indicators
+    description: Indicator analysis endpoints
+  - name: Screen
+    description: Equity screen and stock discovery endpoints
+  - name: Stock
+    description: Stock related data endpoints
+  - name: Health
+    description: Service health endpoints
+
+paths:
+  /api/v1/indicators/ma-cross/analyze:
+    post:
+      tags:
+        - Indicators
+      summary: Analyze moving-average cross signals for one or more symbols
+      description: |
+        Accepts stock symbols and MA parameters.
+        The backend ensures required market data is available in the database,
+        invokes Analyzer, and returns cross analysis results to the frontend.
+      operationId: analyzeMACross
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MACrossAnalyzeRequest'
+            examples:
+              default:
+                summary: Analyze AAPL with default MA settings
+                value:
+                  symbols:
+                    - AAPL
+                  maShort: 50
+                  maLong: 200
+              batch:
+                summary: Analyze multiple symbols
+                value:
+                  symbols:
+                    - AAPL
+                    - MSFT
+                    - NVDA
+                  maShort: 20
+                  maLong: 50
+      responses:
+        '200':
+          description: Analysis completed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MACrossAnalyzeResponse'
+              examples:
+                success:
+                  summary: Successful response
+                  value:
+                    requestId: "7f9d1b1d-3a1f-4e99-a1d9-25a8fdb7f101"
+                    results:
+                      - symbol: "2473.HK"
+                        crossSignals:
+                          - datetime: "2026-01-20T00:00:00+08:00"
+                            crossType: "GOLDEN_CROSS"
+                            maShort: 8.695999884605408
+                            maLong: 8.602999933560689
+                            close: 12.9399995803833
+                            rsi: 79.86017435876731
+                            obv: 140471565
+                            isObvRising: false
+                            isBuySignal: false
+                            note: "RSI overbought(79.86) OBV not rising."
+        '400':
+          description: Invalid request parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: No data found for one or more symbols
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Analysis could not be completed due to insufficient market data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '502':
+          description: Upstream dependency failure
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/screen/equity/search:
+    post:
+      tags:
+        - Screen
+      summary: Search equities by screen filters
+      description: |
+        Accepts screen filters from frontend, invokes YFinance screen
+        through Querier, stores matched stock preview results into database,
+        and returns the filtered stock list for frontend preview pages.
+      operationId: searchEquitiesByScreen
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EquityScreenSearchRequest'
+            examples:
+              hongkong_medical_industrial:
+                summary: Search HKG medical and industrial stocks with volume filter
+                value:
+                  exchanges:
+                    - HKG
+                  sectors:
+                    - Healthcare
+                    - Industrials
+                  industries:
+                    - Drug Manufacturers
+                    - Metal Fabrication
+                  minEodVolume: 1000000
+                  sortField: eodVolume
+                  sortAsc: false
+                  limit: 100
+                  forceRefresh: true
+      responses:
+        '200':
+          description: Screen search completed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EquityScreenSearchResponse'
+              examples:
+                success:
+                  value:
+                    requestId: "b7f4d7d2-dcc9-4a16-9a54-a3276f6a19c2"
+                    total: 2
+                    results:
+                      - symbol: "1093.HK"
+                        shortName: "CSPC Pharmaceutical Group Ltd."
+                        exchange: "HKG"
+                        sector: "Healthcare"
+                        industry: "Drug Manufacturers"
+                        close: 8.42
+                        eodVolume: 5823412
+                        currency: "HKD"
+                      - symbol: "0578.HK"
+                        shortName: "Shanghai Jin Jiang Metal"
+                        exchange: "HKG"
+                        sector: "Industrials"
+                        industry: "Metal Fabrication"
+                        close: 5.78
+                        eodVolume: 1456023
+                        currency: "HKD"
+        '400':
+          description: Invalid screen request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Screen search could not be completed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '502':
+          description: Upstream dependency failure
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/stock:
+    get:
+      tags:
+        - Stock
+      summary: Get stock preview list from database
+      description: |
+        Returns cached stock preview rows from database.
+        This endpoint does not call upstream YFinance screen directly.
+
+        **Note**: Query items are arrays and support multiple values, e.g. `?exchanges=HKG&exchanges=NASDAQ`,
+        but the returned list item StockPreview has single value fields.
+
+      operationId: listStock
+      parameters:
+        - in: query
+          name: exchanges
+          schema:
+            type: array
+            items:
+              type: string
+          style: form
+          explode: true
+          description: Filter by one or more exchange codes, e.g. HKG, NASDAQ
+        - in: query
+          name: sectors
+          schema:
+            type: array
+            items:
+              type: string
+          style: form
+          explode: true
+          description: Filter by one or more sectors, e.g. Healthcare, Technology
+        - in: query
+          name: industries
+          schema:
+            type: array
+            items:
+              type: string
+          style: form
+          explode: true
+          description: Filter by one or more industries, e.g. Drug Manufacturers, Software - Application
+        - in: query
+          name: minEodVolume
+          schema:
+            type: integer
+            format: int64
+            example: 1000000
+          description: Minimum EOD volume
+        - in: query
+          name: sortField
+          schema:
+            type: string
+            enum:
+              - symbol
+              - close
+              - eodVolume
+            default: eodVolume
+        - in: query
+          name: sortAsc
+          schema:
+            type: boolean
+            default: false
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 50
+            minimum: 1
+            maximum: 500
+        - in: query
+          name: offset
+          schema:
+            type: integer
+            default: 0
+            minimum: 0
+      responses:
+        '200':
+          description: Stock preview list returned successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StockPreviewListResponse'
+        '400':
+          description: Invalid query parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/stock/{symbol}/quote:
+    get:
+      tags:
+        - Stock
+      summary: Get stock quote preview from database
+      description: |
+        Returns basic quote and profile fields for a single symbol from database,
+        such as symbol, close, EOD volume, exchange, sector, and industry.
+      operationId: getStockQuote
+      parameters:
+        - in: path
+          name: symbol
+          required: true
+          schema:
+            type: string
+          description: Stock ticker symbol
+      responses:
+        '200':
+          description: Stock quote returned successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StockQuoteResponse'
+        '404':
+          description: Symbol not found in database
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/health:
+    get:
+      tags:
+        - Health
+      summary: Health check
+      operationId: getHealth
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+
+components:
+  schemas:
+    MACrossAnalyzeRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - symbols
+      properties:
+        symbols:
+          type: array
+          minItems: 1
+          items:
+            type: string
+            minLength: 1
+            example: AAPL
+        maShort:
+          type: integer
+          format: int64
+          default: 50
+          minimum: 1
+          example: 50
+        maLong:
+          type: integer
+          format: int64
+          default: 200
+          minimum: 2
+          example: 200
+        forceRefresh:
+          type: boolean
+          default: false
+          description: |
+            If true, backend refreshes market data from upstream source before analysis.
+            If omitted or false, backend may use cached database data when valid.
+      example:
+        symbols:
+          - AAPL
+        maShort: 50
+        maLong: 200
+        forceRefresh: false
+
+    MACrossAnalyzeResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - requestId
+        - results
+      properties:
+        requestId:
+          type: string
+          example: "7f9d1b1d-3a1f-4e99-a1d9-25a8fdb7f101"
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/AnalysisResult'
+
+    AnalysisResult:
+      type: object
+      additionalProperties: false
+      required:
+        - symbol
+        - crossSignals
+      properties:
+        symbol:
+          type: string
+          minLength: 1
+          example: AAPL
+        crossSignals:
+          type: array
+          items:
+            $ref: '#/components/schemas/CrossSignal'
+
+    CrossSignal:
+      type: object
+      additionalProperties: false
+      required:
+        - datetime
+        - crossType
+        - maShort
+        - maLong
+        - close
+        - rsi
+        - obv
+        - isObvRising
+        - isBuySignal
+        - note
+      properties:
+        datetime:
+          type: string
+          format: date-time
+          example: "2026-03-10T00:00:00Z"
+        crossType:
+          $ref: '#/components/schemas/CrossType'
+        maShort:
+          type: number
+          format: double
+          example: 210.52
+        maLong:
+          type: number
+          format: double
+          example: 209.87
+        close:
+          type: number
+          format: double
+          example: 212.34
+        rsi:
+          type: number
+          format: double
+          example: 61.8
+        obv:
+          type: integer
+          format: int64
+          example: 98452341
+        isObvRising:
+          type: boolean
+          example: true
+        isBuySignal:
+          type: boolean
+          example: true
+        note:
+          type: string
+          example: "Golden cross confirmed with rising OBV."
+
+    CrossType:
+      type: string
+      enum:
+        - GOLDEN_CROSS
+        - DEATH_CROSS
+
+    EquityScreenSearchRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - exchanges
+      properties:
+        exchanges:
+          type: array
+          minItems: 1
+          items:
+            type: string
+            minLength: 1
+          description: One or more exchange codes to include
+          example: 
+            - HKG
+            - NASDAQ
+        sectors:
+          type: array
+          minItems: 1
+          items:
+            type: string
+            minLength: 1
+          description: One or more sectors to include
+          example:
+            - Healthcare
+            - Industrials
+        industries:
+          type: array
+          minItems: 1
+          items:
+            type: string
+            minLength: 1
+          description: One or more industries to include
+          example:
+            - Drug Manufacturers
+            - Metal Fabrication
+        minEodVolume:
+          type: integer
+          format: int64
+          minimum: 0
+          description: Minimum end-of-day trading volume
+          example: 1000000
+        maxEodVolume:
+          type: integer
+          format: int64
+          minimum: 0
+          description: Maximum end-of-day trading volume
+          example: 50000000
+        minClose:
+          type: number
+          format: double
+          description: Minimum close price
+        maxClose:
+          type: number
+          format: double
+          description: Maximum close price
+        sortField:
+          type: string
+          enum:
+            - eodVolume
+            - close
+            - symbol
+          default: eodVolume
+        sortAsc:
+          type: boolean
+          default: false
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 500
+          default: 100
+        offset:
+          type: integer
+          minimum: 0
+          default: 0
+        forceRefresh:
+          type: boolean
+          default: true
+          description: |
+            If true, backend calls upstream screen and refreshes database cache.
+            If false, backend may use recently cached screen results if available.
+
+    EquityScreenSearchResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - requestId
+        - total
+        - results
+      properties:
+        requestId:
+          type: string
+          example: "b7f4d7d2-dcc9-4a16-9a54-a3276f6a19c2"
+        total:
+          type: integer
+          example: 2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/StockPreview'
+
+    StockPreviewListResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - total
+        - results
+      properties:
+        total:
+          type: integer
+          example: 25
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/StockPreview'
+
+    StockQuoteResponse:
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/StockPreview'
+
+    StockPreview:
+      type: object
+      additionalProperties: false
+      required:
+        - symbol
+        - exchange
+      properties:
+        symbol:
+          type: string
+          example: 1093.HK
+        shortName:
+          type: string
+          example: CSPC Pharmaceutical Group Ltd.
+        exchange:
+          type: string
+          example: HKG
+        sector:
+          type: string
+          example: Healthcare
+        industry:
+          type: string
+          example: Drug Manufacturers
+        close:
+          type: number
+          format: double
+          example: 8.42
+        eodVolume:
+          type: integer
+          format: int64
+          example: 5823412
+        currency:
+          type: string
+          example: HKD
+
+    ErrorResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+          example: INVALID_ARGUMENT
+        message:
+          type: string
+          example: maShort must be greater than 1 and less than maLong.
+        details:
+          type: array
+          items:
+            type: string
