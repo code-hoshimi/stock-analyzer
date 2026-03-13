@@ -34,17 +34,22 @@ private:
     std::string db_path_;
     std::unique_ptr<hoshimi::ThreadPool> thread_pool_;
 
-    std::vector<::AnalysisResult> AnalyzeCross(std::string symbol) {
+    struct Parameters {
+        int64_t ma_short = 20;
+        int64_t ma_long = 60;
+        int64_t rsi_period = 14;
+        int64_t obv_rising_window = 5;
+        std::string observation_window = "2024-01-01";
+    };
+
+    std::vector<::AnalysisResult> AnalyzeCross(std::string symbol, const Parameters& param) {
         auto prices = query_prices(db_path_, symbol);
         if (prices.empty()) { std::cout << "No data yet.\n"; return {}; }
 
-        // TODO: parameterize this
-        std::string cutoff = "2024-01-01";
-
-        auto crosses = detect_ma_cross(prices);
-        auto rsi     = calculate_rsi(prices);
-        auto obv     = calculate_obv(prices);
-        auto results = analyze(crosses, rsi, obv, cutoff);
+        auto crosses = detect_ma_cross(prices, static_cast<int>(param.ma_short), static_cast<int>(param.ma_long));
+        auto rsi     = calculate_rsi(prices, static_cast<int>(param.rsi_period));
+        auto obv     = calculate_obv(prices, static_cast<int>(param.obv_rising_window));
+        auto results = analyze(crosses, rsi, obv, param.observation_window);
         return results;
     }
 
@@ -68,6 +73,25 @@ public:
             return Status(StatusCode::INVALID_ARGUMENT, "ma_short must be less than ma_long");
         }
 
+        if (req->rsi_period() <= 0) {
+            return Status(StatusCode::INVALID_ARGUMENT, "rsi_period must be grater than 0");
+        }
+
+        if (req->obv_rising_window() <= 0) {
+            return Status(StatusCode::INVALID_ARGUMENT, "obv_rising_window must be grater than 0");
+        }
+
+        Parameters param{
+            .ma_short = req->ma_short(),
+            .ma_long = req->ma_long(),
+            .rsi_period = req->rsi_period(),
+            .obv_rising_window = req->obv_rising_window(),
+        };
+
+        if (req->observation_window() != "") {
+            param.observation_window = req->observation_window();
+        }
+
         try {
             // Collect symbols from request
             std::vector<std::string> symbols(
@@ -79,8 +103,8 @@ public:
             futures.reserve(symbols.size());
 
             for (const auto& symbol : symbols) {
-                futures.push_back({symbol, thread_pool_->submit([this, symbol]() {
-                    return this->AnalyzeCross(symbol);
+                futures.push_back({symbol, thread_pool_->submit([this, symbol, param]() {
+                    return this->AnalyzeCross(symbol, param);
                 })});
             }
 

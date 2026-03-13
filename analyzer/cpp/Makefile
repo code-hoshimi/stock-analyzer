@@ -7,9 +7,9 @@ GRPC_INSTALL := $(HOME)/data/grpc
 
 # ── gRPC & protobuf ───────────────────────────────────────────────────────────
 # Use deferred (=) so pkg-config is only invoked when actually building/linking
-GRPC_FLAGS = $(shell PKG_CONFIG_PATH=$(GRPC_INSTALL)/lib/pkgconfig pkg-config --cflags grpc++ protobuf)
+GRPC_FLAGS = $(shell PKG_CONFIG_PATH=$(GRPC_INSTALL)/lib/pkgconfig pkg-config --define-variable=prefix=$(GRPC_INSTALL) --cflags grpc++ protobuf)
 GRPC_LIBS  = -L$(GRPC_INSTALL)/lib \
-             $(shell PKG_CONFIG_PATH=$(GRPC_INSTALL)/lib/pkgconfig pkg-config --libs --static grpc++ protobuf) \
+             $(shell PKG_CONFIG_PATH=$(GRPC_INSTALL)/lib/pkgconfig pkg-config --define-variable=prefix=$(GRPC_INSTALL) --libs --static grpc++ protobuf) \
              -lpthread -ldl
 PROTOC     := $(GRPC_INSTALL)/bin/protoc
 GRPC_PLUGIN:= $(GRPC_INSTALL)/bin/grpc_cpp_plugin

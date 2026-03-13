@@ -12,6 +12,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         build-essential \
         pkg-config \
         libsqlite3-dev \
+        libssl-dev \
+        libre2-dev \
+        zlib1g-dev \
         make \
     && rm -rf /var/lib/apt/lists/*
 

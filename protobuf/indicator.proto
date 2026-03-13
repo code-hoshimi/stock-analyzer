@@ -29,6 +29,9 @@ message CrossRequest {
     repeated string symbol = 1;
     int64 ma_short = 2;
     int64 ma_long = 3;
+    int64 rsi_period = 4;
+    int64 obv_rising_window = 5;
+    string observation_window = 6;
 }
 
 message CrossResponse {
