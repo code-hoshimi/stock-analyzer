@@ -20,3 +20,7 @@ build/
 
 # node modules
 node_modules/
+
+# Vite build output
+ui_api_gateway/frontend/dist/
+ui_api_gateway/dist/

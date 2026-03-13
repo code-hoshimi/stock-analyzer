@@ -1,39 +1,15 @@
 import { Outlet, Link, useLocation } from 'react-router';
-import { Home, Bell, Star, Menu } from 'lucide-react';
+import { Home, Menu } from 'lucide-react';
 import { Button } from '../components/ui/button';
-import { Badge } from '../components/ui/badge';
 import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetDescription } from '../components/ui/sheet';
-import { getNotifications } from '../api/client';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 
 export function Root() {
   const location = useLocation();
-  const [unreadCount, setUnreadCount] = useState(0);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  
-  useEffect(() => {
-    const updateUnreadCount = async () => {
-      try {
-        const notifications = await getNotifications();
-        const unread = notifications.filter(n => !n.read).length;
-        setUnreadCount(unread);
-      } catch {
-        setUnreadCount(0);
-      }
-    };
-    
-    updateUnreadCount();
-    
-    // 定期检查未读通知
-    const interval = setInterval(updateUnreadCount, 15000);
-    
-    return () => clearInterval(interval);
-  }, [location]);
-  
+
   const navItems = [
     { path: '/', icon: Home, label: '市场' },
-    { path: '/favorites', icon: Star, label: '自选' },
-    { path: '/subscriptions', icon: Bell, label: '订阅', badge: unreadCount > 0 ? unreadCount : null }
   ];
   
   const NavContent = () => (
@@ -54,11 +30,6 @@ export function Root() {
             >
               <Icon className="h-5 w-5" />
               <span>{item.label}</span>
-              {item.badge && (
-                <Badge variant="destructive" className="ml-auto">
-                  {item.badge}
-                </Badge>
-              )}
             </Button>
           </Link>
         );
@@ -114,7 +85,7 @@ export function Root() {
       
       {/* 移动端底部导航 */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-card border-t border-border z-50">
-        <div className="grid grid-cols-3 gap-1 p-2">
+        <div className="grid grid-cols-1 gap-1 p-2">
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = location.pathname === item.path;
@@ -127,17 +98,7 @@ export function Root() {
                   isActive ? 'bg-primary/20 text-primary' : 'text-muted-foreground'
                 }`}
               >
-                <div className="relative">
-                  <Icon className="h-6 w-6" />
-                  {item.badge && (
-                    <Badge 
-                      variant="destructive" 
-                      className="absolute -top-2 -right-2 h-5 w-5 p-0 flex items-center justify-center text-xs"
-                    >
-                      {item.badge}
-                    </Badge>
-                  )}
-                </div>
+                <Icon className="h-6 w-6" />
                 <span className="text-xs">{item.label}</span>
               </Link>
             );

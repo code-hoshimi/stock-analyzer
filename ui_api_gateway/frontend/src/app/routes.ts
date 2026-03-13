@@ -1,9 +1,7 @@
 import { createBrowserRouter } from 'react-router';
 import { Root } from './pages/Root';
 import { Home } from './pages/Home';
-import { Favorites } from './pages/Favorites';
 import { StockDetail } from './pages/StockDetail';
-import { Subscriptions } from './pages/Subscriptions';
 
 export const router = createBrowserRouter([
   {
@@ -15,16 +13,8 @@ export const router = createBrowserRouter([
         Component: Home,
       },
       {
-        path: 'favorites',
-        Component: Favorites,
-      },
-      {
-        path: 'stock/:code',
+        path: 'stock/:symbol',
         Component: StockDetail,
-      },
-      {
-        path: 'subscriptions',
-        Component: Subscriptions,
       },
     ],
   },

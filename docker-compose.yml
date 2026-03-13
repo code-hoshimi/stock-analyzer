@@ -34,3 +34,10 @@ services:
       - DB_PATH=/data/stocks.db
       - PORT=8080
       - DATA_SERVER_BASE=http://stock-analyzer-apiserver:3881
+
+  mock_ui_api_gateway:
+    build: ./ui_api_gateway
+    ports:
+      - "6330:6330"
+    environment:
+      - PORT=6330
